@@ -2,6 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:just_audio/just_audio.dart';
+
+import 'player.dart';
+
+final mp = MusicPlayer();
 
 void main() {
   runApp(MusicApp());
@@ -22,7 +27,13 @@ class MusicApp extends StatelessWidget {
   }
 }
 
-class Home extends StatelessWidget {
+class Home extends StatefulWidget {
+  @override
+  _HomeState createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  SongInfo nowPlaying;
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -37,7 +48,7 @@ class Home extends StatelessWidget {
               Flexible(
                 flex: 1,
                 child: Container(
-                  child: PlayPreview(),
+                  child: PlayPreview(nowPlaying),
                   height: MediaQuery.of(context).size.height * 0.14,
                   color: Colors.red,
                 ),
@@ -45,7 +56,9 @@ class Home extends StatelessWidget {
               Flexible(
                 flex: 7,
                 child: Container(
-                  child: SongList(),
+                  child: SongList(onSelect: (SongInfo song) {
+                    setState(() {});
+                  }),
                   color: Colors.blueGrey,
                 ),
               )
@@ -58,15 +71,15 @@ class Home extends StatelessWidget {
 }
 
 class PlayPreview extends StatefulWidget {
-  SongInfo song;
-  PlayPreview({@required this.song});
+  SongInfo nowPlaying;
+  PlayPreview(nowPlaying);
   @override
-  _PlayPreviewState createState() => _PlayPreviewState(song: this.song);
+  _PlayPreviewState createState() => _PlayPreviewState(this.nowPlaying);
 }
 
 class _PlayPreviewState extends State<PlayPreview> {
-  SongInfo song;
-  _PlayPreviewState({@required this.song});
+  SongInfo nowPlaying;
+  _PlayPreviewState(nowPlaying);
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -76,11 +89,11 @@ class _PlayPreviewState extends State<PlayPreview> {
         Container(
           padding: EdgeInsets.all(8),
           child: ClipOval(
-            child: (song != null && song.albumArtwork != null)
+            child: (nowPlaying != null && nowPlaying.albumArtwork != null)
                 ? Image(
                     height: 80,
                     width: 80,
-                    image: FileImage(File(song.albumArtwork)),
+                    image: FileImage(File(nowPlaying.albumArtwork)),
                   )
                 : Container(
                     color: Colors.black,
@@ -90,7 +103,9 @@ class _PlayPreviewState extends State<PlayPreview> {
           ),
         ),
         Container(
-            child: (song != null) ? Text(song.title) : Text("Play Something")),
+            child: (nowPlaying != null)
+                ? Text(nowPlaying.title)
+                : Text("Play Something")),
         Container(
           height: 80,
           width: 80,
@@ -102,6 +117,8 @@ class _PlayPreviewState extends State<PlayPreview> {
 }
 
 class SongList extends StatelessWidget {
+  final void Function(SongInfo song) onSelect;
+  SongList({@required this.onSelect});
   Future<List<SongInfo>> fetchSongs() async {
     return await audioQuery.getSongs();
   }
@@ -117,7 +134,12 @@ class SongList extends StatelessWidget {
                 return ListView.builder(
                     itemCount: songList.length,
                     itemBuilder: (context, index) {
-                      return SongTile(song: songList[index]);
+                      return SongTile(
+                        song: songList[index],
+                        onSelect: (SongInfo song) {
+                          onSelect(song);
+                        },
+                      );
                     });
               else
                 return CircularProgressIndicator();
@@ -126,61 +148,74 @@ class SongList extends StatelessWidget {
 }
 
 class SongTile extends StatelessWidget {
-  SongInfo song;
-  SongTile({@required this.song});
+  final SongInfo song;
+  final void Function(SongInfo song) onSelect;
+  SongTile({@required this.song, @required this.onSelect});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(0, 1, 0, 1),
-      color: Colors.black,
-      padding: EdgeInsets.fromLTRB(4, 2, 4, 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          ClipRRect(
-            child: (song.albumArtwork != null)
-                ? Image(
-                    height: 50,
-                    width: 50,
-                    image: FileImage(File(song.albumArtwork)),
-                  )
-                : Container(
-                    height: 50, width: 50, child: Icon(Icons.music_note)),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  child: Text(
-                    (song.title.length < 40)
-                        ? song.title
-                        : song.title.substring(0, 37) + "...",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  child: Text(
-                    (song.artist.length < 55)
-                        ? song.artist
-                        : song.artist.substring(0, 51) + "...",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
-                Container(
-                  child: Text(
-                    (song.album.length < 55)
-                        ? song.album
-                        : song.album.substring(0, 51) + "...",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
-              ],
+    return InkWell(
+      onTap: () async {
+        try {
+          await mp.player.setFilePath(song.filePath);
+        } on PlayerException catch (e) {
+          print("Error Code: ${e.code}");
+        }
+        mp.player.play();
+        onSelect(this.song);
+      },
+      child: Container(
+        margin: EdgeInsets.fromLTRB(0, 1, 0, 1),
+        color: Colors.black,
+        padding: EdgeInsets.fromLTRB(4, 2, 4, 2),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            ClipRRect(
+              child: (song.albumArtwork != null)
+                  ? Image(
+                      height: 50,
+                      width: 50,
+                      image: FileImage(File(song.albumArtwork)),
+                    )
+                  : Container(
+                      height: 50, width: 50, child: Icon(Icons.music_note)),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    child: Text(
+                      (song.title.length < 40)
+                          ? song.title
+                          : song.title.substring(0, 37) + "...",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    child: Text(
+                      (song.artist.length < 55)
+                          ? song.artist
+                          : song.artist.substring(0, 51) + "...",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  Container(
+                    child: Text(
+                      (song.album.length < 55)
+                          ? song.album
+                          : song.album.substring(0, 51) + "...",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

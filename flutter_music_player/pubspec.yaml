@@ -24,6 +24,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_audio_query:
+  just_audio:
 
 
 
