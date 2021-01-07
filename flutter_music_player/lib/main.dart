@@ -131,6 +131,7 @@ class SongTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: EdgeInsets.fromLTRB(0, 1, 0, 1),
       color: Colors.black,
       padding: EdgeInsets.fromLTRB(4, 2, 4, 2),
       child: Row(
@@ -146,35 +147,38 @@ class SongTile extends StatelessWidget {
                 : Container(
                     height: 50, width: 50, child: Icon(Icons.music_note)),
           ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                child: Text(
-                  (song.title.length < 45)
-                      ? song.title
-                      : song.title.substring(0, 41) + "...",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  child: Text(
+                    (song.title.length < 40)
+                        ? song.title
+                        : song.title.substring(0, 37) + "...",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-              Container(
-                child: Text(
-                  (song.artist.length < 55)
-                      ? song.artist
-                      : song.artist.substring(0, 51) + "...",
-                  style: TextStyle(fontSize: 12),
+                Container(
+                  child: Text(
+                    (song.artist.length < 55)
+                        ? song.artist
+                        : song.artist.substring(0, 51) + "...",
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
-              ),
-              Container(
-                child: Text(
-                  (song.album.length < 55)
-                      ? song.album
-                      : song.album.substring(0, 51) + "...",
-                  style: TextStyle(fontSize: 12),
+                Container(
+                  child: Text(
+                    (song.album.length < 55)
+                        ? song.album
+                        : song.album.substring(0, 51) + "...",
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
