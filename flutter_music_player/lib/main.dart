@@ -60,6 +60,16 @@ class _HomeState extends State<Home> {
                     setState(() {
                       mp.nowPlaying = song;
                       mp.player.play();
+                      mp.player.createPositionStream(
+                          steps: 200,
+                          maxPeriod: Duration(
+                              milliseconds: int.parse(mp.nowPlaying.duration)));
+                    });
+                    mp.player.positionStream.listen((event) {
+                      setState(() {
+                        mp.seekPos = (event.inMilliseconds * 200) /
+                            double.parse(mp.nowPlaying.duration);
+                      });
                     });
                   }),
                   color: Colors.blueGrey,
@@ -79,27 +89,14 @@ class PlayPreview extends StatefulWidget {
 }
 
 class _PlayPreviewState extends State<PlayPreview> {
-  int pos = 0;
-  void setupEvents() {
-    mp.player.createPositionStream(
-        steps: 200,
-        maxPeriod: Duration(milliseconds: int.parse(mp.nowPlaying.duration)));
-    mp.player.positionStream.listen((event) {
-      pos = event.inMilliseconds;
-      print(pos);
-      setState(() {});
-    });
-  }
-
   @override
   void initState() {
     super.initState();
-    setupEvents();
   }
 
   Widget build(BuildContext context) {
     return Container(
-        margin: EdgeInsets.all(4),
+        margin: EdgeInsets.all(2),
         color: Colors.black,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -147,16 +144,17 @@ class _PlayPreviewState extends State<PlayPreview> {
                               ),
                             ),
                             Container(
-                              margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
+                              //PlayProgress bar
+                              margin: EdgeInsets.fromLTRB(0, 6, 0, 0),
                               color: Colors.grey,
                               width: 200,
-                              height: 3,
+                              height: 1,
                               child: Row(
                                 children: [
                                   Container(
                                     color: Colors.red,
-                                    height: 3,
-                                    width: pos.toDouble(),
+                                    height: 1,
+                                    width: mp.seekPos,
                                   ),
                                 ],
                               ),
