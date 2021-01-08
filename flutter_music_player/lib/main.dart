@@ -48,7 +48,7 @@ class _HomeState extends State<Home> {
               Flexible(
                 flex: 1,
                 child: Container(
-                  child: PlayPreview(nowPlaying),
+                  child: PlayPreview(),
                   height: MediaQuery.of(context).size.height * 0.14,
                   color: Colors.red,
                 ),
@@ -57,7 +57,10 @@ class _HomeState extends State<Home> {
                 flex: 7,
                 child: Container(
                   child: SongList(onSelect: (SongInfo song) {
-                    setState(() {});
+                    setState(() {
+                      mp.nowPlaying = song;
+                      mp.player.play();
+                    });
                   }),
                   color: Colors.blueGrey,
                 ),
@@ -71,48 +74,114 @@ class _HomeState extends State<Home> {
 }
 
 class PlayPreview extends StatefulWidget {
-  SongInfo nowPlaying;
-  PlayPreview(nowPlaying);
   @override
-  _PlayPreviewState createState() => _PlayPreviewState(this.nowPlaying);
+  _PlayPreviewState createState() => _PlayPreviewState();
 }
 
 class _PlayPreviewState extends State<PlayPreview> {
-  SongInfo nowPlaying;
-  _PlayPreviewState(nowPlaying);
+  int pos = 0;
+  void setupEvents() {
+    mp.player.createPositionStream(
+        steps: 200,
+        maxPeriod: Duration(milliseconds: int.parse(mp.nowPlaying.duration)));
+    mp.player.positionStream.listen((event) {
+      pos = event.inMilliseconds;
+      print(pos);
+      setState(() {});
+    });
+  }
+
   @override
+  void initState() {
+    super.initState();
+    setupEvents();
+  }
+
   Widget build(BuildContext context) {
     return Container(
+        margin: EdgeInsets.all(4),
+        color: Colors.black,
         child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Container(
-          padding: EdgeInsets.all(8),
-          child: ClipOval(
-            child: (nowPlaying != null && nowPlaying.albumArtwork != null)
-                ? Image(
-                    height: 80,
-                    width: 80,
-                    image: FileImage(File(nowPlaying.albumArtwork)),
-                  )
-                : Container(
-                    color: Colors.black,
-                    height: 80,
-                    width: 80,
-                    child: Icon(Icons.music_note)),
-          ),
-        ),
-        Container(
-            child: (nowPlaying != null)
-                ? Text(nowPlaying.title)
-                : Text("Play Something")),
-        Container(
-          height: 80,
-          width: 80,
-          child: Icon(Icons.play_arrow),
-        ),
-      ],
-    ));
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: EdgeInsets.all(8),
+              child: ClipOval(
+                child: (mp.nowPlaying != null &&
+                        mp.nowPlaying.albumArtwork != null)
+                    ? Image(
+                        height: 80,
+                        width: 80,
+                        image: FileImage(File(mp.nowPlaying.albumArtwork)),
+                      )
+                    : Container(
+                        color: Colors.black,
+                        height: 80,
+                        width: 80,
+                        child: Icon(Icons.music_note)),
+              ),
+            ),
+            Container(
+                child: (mp.nowPlaying != null)
+                    ? Container(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              (mp.nowPlaying.title.length < 30)
+                                  ? mp.nowPlaying.title
+                                  : mp.nowPlaying.title.substring(0, 29),
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: 'Verdana',
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              (mp.nowPlaying.artist.length < 30)
+                                  ? mp.nowPlaying.artist
+                                  : mp.nowPlaying.artist.substring(0, 29),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Verdana',
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
+                              color: Colors.grey,
+                              width: 200,
+                              height: 3,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    color: Colors.red,
+                                    height: 3,
+                                    width: pos.toDouble(),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      )
+                    : Text("Play Something")),
+            Container(
+              height: 80,
+              width: 70,
+              child: InkWell(
+                child: Icon(
+                  (mp.player.playing) ? Icons.pause : Icons.play_arrow,
+                  size: 28,
+                ),
+                onTap: () {
+                  print("Play/Pause Button Pressed");
+                  setState(() {});
+                  (mp.player.playing) ? mp.player.pause() : mp.player.play();
+                },
+              ),
+            ),
+          ],
+        ));
   }
 }
 
@@ -142,7 +211,7 @@ class SongList extends StatelessWidget {
                       );
                     });
               else
-                return CircularProgressIndicator();
+                return Container(child: CircularProgressIndicator());
             }));
   }
 }
@@ -160,7 +229,6 @@ class SongTile extends StatelessWidget {
         } on PlayerException catch (e) {
           print("Error Code: ${e.code}");
         }
-        mp.player.play();
         onSelect(this.song);
       },
       child: Container(
