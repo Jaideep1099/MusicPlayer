@@ -38,6 +38,9 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          title: Text('Music'),
+        ),
         drawer: Drawer(),
         body: Container(
           height: MediaQuery.of(context).size.height,
@@ -46,15 +49,8 @@ class _HomeState extends State<Home> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Flexible(
-                flex: 1,
-                child: Container(
-                  child: PlayPreview(),
-                  height: MediaQuery.of(context).size.height * 0.14,
-                  color: Colors.red,
-                ),
-              ),
-              Flexible(
                 flex: 7,
+                fit: FlexFit.tight,
                 child: Container(
                   child: SongList(onSelect: (SongInfo song) {
                     setState(() {
@@ -67,14 +63,28 @@ class _HomeState extends State<Home> {
                     });
                     mp.player.positionStream.listen((event) {
                       setState(() {
-                        mp.seekPos = (event.inMilliseconds * 200) /
-                            double.parse(mp.nowPlaying.duration);
+                        if (event.inMilliseconds >=
+                            double.parse(mp.nowPlaying.duration)) {
+                          mp.seekPos = 0;
+                          mp.player.pause();
+                          mp.player.seek(Duration.zero);
+                        } else
+                          mp.seekPos = (event.inMilliseconds * 200) /
+                              double.parse(mp.nowPlaying.duration);
                       });
                     });
                   }),
                   color: Colors.blueGrey,
                 ),
-              )
+              ),
+              Flexible(
+                flex: 1,
+                child: Container(
+                  child: PlayPreview(),
+                  height: MediaQuery.of(context).size.height * 0.14,
+                  color: Colors.red,
+                ),
+              ),
             ],
           ),
         ),
