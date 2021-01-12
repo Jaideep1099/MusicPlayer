@@ -33,7 +33,6 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  SongInfo nowPlaying;
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -52,7 +51,7 @@ class _HomeState extends State<Home> {
                 flex: 7,
                 fit: FlexFit.tight,
                 child: Container(
-                  child: SongList(onSelect: (SongInfo song) {
+                  child: SongList(onSelect: (SongInfo song) async {
                     setState(() {
                       mp.nowPlaying = song;
                       mp.player.play();
@@ -61,17 +60,18 @@ class _HomeState extends State<Home> {
                           maxPeriod: Duration(
                               milliseconds: int.parse(mp.nowPlaying.duration)));
                     });
-                    mp.player.positionStream.listen((event) {
-                      setState(() {
-                        if (event.inMilliseconds >=
-                            double.parse(mp.nowPlaying.duration)) {
-                          mp.seekPos = 0;
-                          mp.player.pause();
-                          mp.player.seek(Duration.zero);
-                        } else
-                          mp.seekPos = (event.inMilliseconds * 200) /
-                              double.parse(mp.nowPlaying.duration);
-                      });
+                    mp.player.positionStream.listen((event) async {
+                      if (event.inMilliseconds >=
+                          double.parse(mp.nowPlaying.duration)) {
+                        mp.seekPos = 0;
+                        mp.player.pause();
+                        mp.player.seek(Duration.zero);
+                        mp.playNext();
+                        setState(() {});
+                      } else
+                        mp.seekPos = (event.inMilliseconds * 200) /
+                            double.parse(mp.nowPlaying.duration);
+                      setState(() {});
                     });
                   }),
                   color: Colors.blueGrey,
@@ -214,6 +214,9 @@ class SongList extends StatelessWidget {
                       return SongTile(
                         song: songList[index],
                         onSelect: (SongInfo song) {
+                          mp.nowPlayingIndex = index;
+                          print(index);
+                          if (mp.songLibrary == null) mp.songLibrary = songList;
                           onSelect(song);
                         },
                       );
