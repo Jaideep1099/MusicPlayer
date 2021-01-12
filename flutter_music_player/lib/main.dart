@@ -60,19 +60,6 @@ class _HomeState extends State<Home> {
                           maxPeriod: Duration(
                               milliseconds: int.parse(mp.nowPlaying.duration)));
                     });
-                    mp.player.positionStream.listen((event) async {
-                      if (event.inMilliseconds >=
-                          double.parse(mp.nowPlaying.duration)) {
-                        mp.seekPos = 0;
-                        mp.player.pause();
-                        mp.player.seek(Duration.zero);
-                        mp.playNext();
-                        setState(() {});
-                      } else
-                        mp.seekPos = (event.inMilliseconds * 200) /
-                            double.parse(mp.nowPlaying.duration);
-                      setState(() {});
-                    });
                   }),
                   color: Colors.blueGrey,
                 ),
@@ -102,6 +89,18 @@ class _PlayPreviewState extends State<PlayPreview> {
   @override
   void initState() {
     super.initState();
+    mp.player.positionStream.listen((event) async {
+      if (event.inMilliseconds >= double.parse(mp.nowPlaying.duration)) {
+        mp.seekPos = 0;
+        mp.player.pause();
+        mp.player.seek(Duration.zero);
+        mp.playNext();
+        setState(() {});
+      } else
+        mp.seekPos =
+            (event.inMilliseconds * 200) / double.parse(mp.nowPlaying.duration);
+      setState(() {});
+    });
   }
 
   Widget build(BuildContext context) {
