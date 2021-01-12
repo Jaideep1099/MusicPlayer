@@ -5,5 +5,5 @@ An attempt to create an opensource music player for android using Flutter
   You can try the latest build using the apk provided in 'latest build' folder
 
   Note : App works fine in phones with a display resolution of 1080p or higher. In lower resolution displays content overflow might occur
-
-  ![](https://github.com/Jaideep1099/MusicPlayer/blob/main/image.jpg?raw=true)
+  
+  <img src="/image.jpg" width="250" title="App Preview" alt="">
