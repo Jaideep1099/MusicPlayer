@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:flutter_music_player/playerview.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'player.dart';
@@ -89,17 +90,19 @@ class _PlayPreviewState extends State<PlayPreview> {
   @override
   void initState() {
     super.initState();
-    mp.player.positionStream.listen((event) async {
-      if (event.inMilliseconds >= double.parse(mp.nowPlaying.duration)) {
+
+    mp.player.playerStateStream.listen((event) async {
+      if (mounted &&
+          mp.player.playing &&
+          mp.player.processingState == ProcessingState.completed) {
         mp.seekPos = 0;
+
         mp.player.pause();
         mp.player.seek(Duration.zero);
         mp.playNext();
-        setState(() {});
-      } else
-        mp.seekPos =
-            (event.inMilliseconds * 200) / double.parse(mp.nowPlaying.duration);
+      }
       setState(() {});
+      print("S: ${mp.player.playerState} ${mp.player.processingState}");
     });
   }
 
@@ -107,87 +110,82 @@ class _PlayPreviewState extends State<PlayPreview> {
     return Container(
         margin: EdgeInsets.all(2),
         color: Colors.black,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              child: ClipOval(
-                child: (mp.nowPlaying != null &&
-                        mp.nowPlaying.albumArtwork != null)
-                    ? Image(
-                        height: 80,
-                        width: 80,
-                        image: FileImage(File(mp.nowPlaying.albumArtwork)),
-                      )
-                    : Container(
-                        color: Colors.black,
-                        height: 80,
-                        width: 80,
-                        child: Icon(Icons.music_note)),
-              ),
-            ),
-            Container(
-                child: (mp.nowPlaying != null)
-                    ? Container(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              (mp.nowPlaying.title.length < 30)
-                                  ? mp.nowPlaying.title
-                                  : mp.nowPlaying.title.substring(0, 29),
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontFamily: 'Verdana',
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              (mp.nowPlaying.artist.length < 30)
-                                  ? mp.nowPlaying.artist
-                                  : mp.nowPlaying.artist.substring(0, 29),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontFamily: 'Verdana',
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            Container(
-                              //PlayProgress bar
-                              margin: EdgeInsets.fromLTRB(0, 6, 0, 0),
-                              color: Colors.grey,
-                              width: 200,
-                              height: 1,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    color: Colors.red,
-                                    height: 1,
-                                    width: mp.seekPos,
-                                  ),
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      )
-                    : Text("Play Something")),
-            Container(
-              height: 80,
-              width: 70,
-              child: InkWell(
-                child: Icon(
-                  (mp.player.playing) ? Icons.pause : Icons.play_arrow,
-                  size: 28,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) {
+              return PlayerView();
+            }));
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                child: ClipOval(
+                  child: (mp.nowPlaying != null &&
+                          mp.nowPlaying.albumArtwork != null)
+                      ? Image(
+                          height: MediaQuery.of(context).size.width * 0.15,
+                          width: MediaQuery.of(context).size.width * 0.15,
+                          image: FileImage(File(mp.nowPlaying.albumArtwork)),
+                        )
+                      : Container(
+                          color: Colors.black,
+                          height: MediaQuery.of(context).size.width * 0.15,
+                          width: MediaQuery.of(context).size.width * 0.15,
+                          child: Icon(Icons.music_note)),
                 ),
-                onTap: () {
-                  print("Play/Pause Button Pressed");
-                  setState(() {});
-                  (mp.player.playing) ? mp.player.pause() : mp.player.play();
-                },
               ),
-            ),
-          ],
+              Container(
+                  width: MediaQuery.of(context).size.width * 0.60,
+                  child: (mp.nowPlaying != null)
+                      ? Container(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                (mp.nowPlaying.title.length < 26)
+                                    ? mp.nowPlaying.title
+                                    : mp.nowPlaying.title.substring(0, 26),
+                                style: TextStyle(
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                            0.042,
+                                    fontFamily: 'Verdana',
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                (mp.nowPlaying.artist.length < 30)
+                                    ? mp.nowPlaying.artist
+                                    : mp.nowPlaying.artist.substring(0, 29),
+                                style: TextStyle(
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.034,
+                                  fontFamily: 'Verdana',
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text("Play Something")),
+              Container(
+                height: 80,
+                width: MediaQuery.of(context).size.width * 0.15,
+                child: InkWell(
+                  child: Icon(
+                    (mp.player.playing) ? Icons.pause : Icons.play_arrow,
+                    size: MediaQuery.of(context).size.width * 0.10,
+                  ),
+                  onTap: () {
+                    print("Play/Pause Button Pressed");
+                    setState(() {});
+                    (mp.player.playing) ? mp.player.pause() : mp.player.play();
+                  },
+                ),
+              ),
+            ],
+          ),
         ));
   }
 }
@@ -252,11 +250,13 @@ class SongTile extends StatelessWidget {
               child: (song.albumArtwork != null)
                   ? Image(
                       height: 50,
-                      width: 50,
+                      width: MediaQuery.of(context).size.width * 0.13,
                       image: FileImage(File(song.albumArtwork)),
                     )
                   : Container(
-                      height: 50, width: 50, child: Icon(Icons.music_note)),
+                      height: 50,
+                      width: MediaQuery.of(context).size.width * 0.13,
+                      child: Icon(Icons.music_note)),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -266,27 +266,30 @@ class SongTile extends StatelessWidget {
                 children: [
                   Container(
                     child: Text(
-                      (song.title.length < 40)
+                      (song.title.length < 35)
                           ? song.title
-                          : song.title.substring(0, 37) + "...",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          : song.title.substring(0, 32) + "..",
+                      style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.042,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                   Container(
                     child: Text(
-                      (song.artist.length < 55)
+                      (song.artist.length < 49)
                           ? song.artist
-                          : song.artist.substring(0, 51) + "...",
-                      style: TextStyle(fontSize: 12),
+                          : song.artist.substring(0, 46) + "..",
+                      style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.032),
                     ),
                   ),
                   Container(
                     child: Text(
-                      (song.album.length < 55)
+                      (song.album.length < 49)
                           ? song.album
-                          : song.album.substring(0, 51) + "...",
-                      style: TextStyle(fontSize: 12),
+                          : song.album.substring(0, 46) + "..",
+                      style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.032),
                     ),
                   ),
                 ],
