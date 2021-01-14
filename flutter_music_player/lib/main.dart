@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_music_player/playerview.dart';
 import 'package:just_audio/just_audio.dart';
+//import 'package:marquee/marquee.dart';
 
 import 'player.dart';
 
@@ -95,8 +96,6 @@ class _PlayPreviewState extends State<PlayPreview> {
       if (mounted &&
           mp.player.playing &&
           mp.player.processingState == ProcessingState.completed) {
-        mp.seekPos = 0;
-
         mp.player.pause();
         mp.player.seek(Duration.zero);
         mp.playNext();
@@ -112,9 +111,10 @@ class _PlayPreviewState extends State<PlayPreview> {
         color: Colors.black,
         child: InkWell(
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return PlayerView();
-            }));
+            if (mp.nowPlaying != null)
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return PlayerView();
+              }));
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -122,6 +122,7 @@ class _PlayPreviewState extends State<PlayPreview> {
               Container(
                 padding: EdgeInsets.all(8),
                 child: ClipOval(
+                  //AlbumArt
                   child: (mp.nowPlaying != null &&
                           mp.nowPlaying.albumArtwork != null)
                       ? Image(
@@ -137,6 +138,7 @@ class _PlayPreviewState extends State<PlayPreview> {
                 ),
               ),
               Container(
+                  //Now Playing Song
                   width: MediaQuery.of(context).size.width * 0.60,
                   child: (mp.nowPlaying != null)
                       ? Container(
@@ -170,6 +172,7 @@ class _PlayPreviewState extends State<PlayPreview> {
                         )
                       : Text("Play Something")),
               Container(
+                //Play/Pause Button
                 height: 80,
                 width: MediaQuery.of(context).size.width * 0.15,
                 child: InkWell(
@@ -179,7 +182,6 @@ class _PlayPreviewState extends State<PlayPreview> {
                   ),
                   onTap: () {
                     print("Play/Pause Button Pressed");
-                    setState(() {});
                     (mp.player.playing) ? mp.player.pause() : mp.player.play();
                   },
                 ),
@@ -213,13 +215,18 @@ class SongList extends StatelessWidget {
                         onSelect: (SongInfo song) {
                           mp.nowPlayingIndex = index;
                           print(index);
-                          if (mp.songLibrary == null) mp.songLibrary = songList;
+                          if (mp.playQueue == null) mp.playQueue = songList;
                           onSelect(song);
                         },
                       );
                     });
               else
-                return Container(child: CircularProgressIndicator());
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                  ],
+                );
             }));
   }
 }

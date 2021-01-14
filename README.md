@@ -6,4 +6,5 @@ An attempt to create an opensource music player for android using Flutter
 
   Note : App works fine in phones with a display resolution of 1080p or higher. In lower resolution displays content overflow might occur
   
-  <img src="/image.jpg" width="250" title="App Preview" alt="">
+  <img src="/latest bulid/Screenshots/home.jpg" width="250" title="Home Preview" alt="">
+  <img src="/latest bulid/Screenshots/playScreen.jpg" width="250" title="PlayScreen Preview" alt="">

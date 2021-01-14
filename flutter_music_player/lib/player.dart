@@ -5,17 +5,16 @@ class MusicPlayer {
   SongInfo nowPlaying;
   int nowPlayingIndex;
   AudioPlayer player;
-  double seekPos;
-  List<SongInfo> songLibrary;
+  List<SongInfo> playQueue;
 
   MusicPlayer() {
     this.player = AudioPlayer();
   }
 
   void playNext() async {
-    if (++this.nowPlayingIndex < this.songLibrary.length) {
+    if (++this.nowPlayingIndex < this.playQueue.length) {
       try {
-        this.nowPlaying = this.songLibrary[this.nowPlayingIndex];
+        this.nowPlaying = this.playQueue[this.nowPlayingIndex];
         await this.player.setFilePath(this.nowPlaying.filePath);
         this.player.play();
       } on PlayerException catch (e) {
@@ -23,8 +22,20 @@ class MusicPlayer {
       }
     } else {
       this.nowPlayingIndex = 0;
-      this.nowPlaying = this.songLibrary[this.nowPlayingIndex];
+      this.nowPlaying = this.playQueue[this.nowPlayingIndex];
       await this.player.setFilePath(this.nowPlaying.filePath);
+    }
+  }
+
+  void playPrev() async {
+    if (this.nowPlayingIndex > 0) {
+      try {
+        this.nowPlaying = this.playQueue[--this.nowPlayingIndex];
+        await this.player.setFilePath(this.nowPlaying.filePath);
+        this.player.play();
+      } on PlayerException catch (e) {
+        print("Error Code: ${e.code}");
+      }
     }
   }
 }
