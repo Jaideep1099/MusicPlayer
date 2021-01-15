@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 
 import 'main.dart';
 
@@ -9,14 +11,20 @@ class PlayerView extends StatefulWidget {
 }
 
 class _PlayerViewState extends State<PlayerView> {
+  StreamSubscription<PlayerState> _playerStateStream;
   @override
   void initState() {
     super.initState();
 
-    mp.player.playerStateStream.listen((event) async {
-      if (mounted) setState(() {});
+    _playerStateStream = mp.player.playerStateStream.listen((event) async {
+      setState(() {});
       print("PV: ${mp.player.playerState} ${mp.player.processingState}");
     });
+  }
+
+  void dispose() {
+    super.dispose();
+    _playerStateStream.cancel();
   }
 
   Widget build(BuildContext context) {
@@ -135,12 +143,18 @@ class Seekbar extends StatefulWidget {
 }
 
 class _SeekbarState extends State<Seekbar> {
+  StreamSubscription<Duration> _posStream;
   @override
   void initState() {
     super.initState();
-    mp.player.positionStream.listen((event) {
-      if (mounted) setState(() {});
+    _posStream = mp.player.positionStream.listen((event) {
+      setState(() {});
     });
+  }
+
+  void dispose() {
+    super.dispose();
+    _posStream.cancel();
   }
 
   Widget build(BuildContext context) {

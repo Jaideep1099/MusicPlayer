@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_audio_query/flutter_audio_query.dart';
@@ -88,13 +89,13 @@ class PlayPreview extends StatefulWidget {
 }
 
 class _PlayPreviewState extends State<PlayPreview> {
+  StreamSubscription<PlayerState> _playerStateStream;
   @override
   void initState() {
     super.initState();
 
-    mp.player.playerStateStream.listen((event) async {
-      if (mounted &&
-          mp.player.playing &&
+    _playerStateStream = mp.player.playerStateStream.listen((event) {
+      if (mp.player.playing &&
           mp.player.processingState == ProcessingState.completed) {
         mp.player.pause();
         mp.player.seek(Duration.zero);
@@ -103,6 +104,11 @@ class _PlayPreviewState extends State<PlayPreview> {
       setState(() {});
       print("S: ${mp.player.playerState} ${mp.player.processingState}");
     });
+  }
+
+  void dispose() {
+    super.dispose();
+    _playerStateStream.cancel();
   }
 
   Widget build(BuildContext context) {
