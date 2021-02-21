@@ -1,11 +1,81 @@
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:just_audio/just_audio.dart';
 
+class SongData {
+  String albumId;
+  String artistId;
+  String artist;
+  String album;
+  String title;
+  String composer;
+  String year;
+  String track;
+  String duration; //in ms
+  String bookmark; //last stopped position
+  String filePath;
+  String uri;
+
+  /// String with the size, in bytes, of this audio file.
+  String fileSize;
+  String albumArtwork;
+  bool isMusic;
+  bool isPodcast;
+  bool isRingtone;
+  bool isAlarm;
+  bool isNotification;
+
+  SongData(
+      {this.album,
+      this.albumArtwork,
+      this.albumId,
+      this.artist,
+      this.artistId,
+      this.bookmark,
+      this.composer,
+      this.duration,
+      this.filePath,
+      this.fileSize,
+      this.isAlarm,
+      this.isMusic,
+      this.isNotification,
+      this.isPodcast,
+      this.isRingtone,
+      this.title,
+      this.track,
+      this.uri,
+      this.year});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'filePath': filePath,
+      'title': title,
+      'albumId': albumId,
+      'album': album,
+      'artistId': artistId,
+      'artist': artist,
+      'albumArtwork': albumArtwork,
+      'bookmark': bookmark,
+      'composer': composer,
+      'duration': duration,
+      'fileSize': fileSize,
+      'isAlarm': isAlarm.toString(),
+      'isMusic': isMusic.toString(),
+      'isNotification': isNotification.toString(),
+      'isPodcast': isPodcast.toString(),
+      'isRingtone': isRingtone.toString(),
+      'track': track,
+      'uri': uri,
+      'year': year
+    };
+  }
+}
+
 class MusicPlayer {
-  SongInfo nowPlaying;
+  SongData nowPlaying;
   int nowPlayingIndex;
   AudioPlayer player;
-  List<SongInfo> playQueue;
+  List<SongData> playQueue;
+
+  List<SongData> library;
 
   MusicPlayer() {
     this.player = AudioPlayer();

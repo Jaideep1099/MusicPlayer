@@ -26,6 +26,9 @@ dependencies:
   flutter_audio_query:
   just_audio:
   marquee:
+  sqflite:
+  path:
+  shared_preferences:
 
 
 

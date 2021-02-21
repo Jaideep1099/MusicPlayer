@@ -1,15 +1,19 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:flutter_music_player/playerview.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:marquee/marquee.dart';
 
+import 'playerview.dart';
 import 'player.dart';
 
-final mp = MusicPlayer();
+dynamic mp;
 
 void main() {
   runApp(MusicApp());
@@ -36,7 +40,143 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  var _dbSet;
+  var _dbPath;
+  Database _database;
+
+  Future<void> _fetchDB() async {
+    _dbPath = await getDatabasesPath();
+    _database = await openDatabase(
+      join(_dbPath, 'musiclib.db'),
+      onCreate: (db, version) {
+        return db.execute(
+          "CREATE TABLE musicLib(filePath TEXT," +
+              " title TEXT, albumId TEXT, album TEXT,artistId TEXT," +
+              " artist TEXT,albumArtwork TEXT,bookmark TEXT, composer TEXT," +
+              " duration TEXT, fileSize TEXT, isAlarm TEXT, isMusic TEXT," +
+              " isNotification TEXT, isPodcast TEXT, isRingtone TEXT," +
+              "  track TEXT, uri TEXT, year TEXT , PRIMARY KEY(title, album, artist, track) )",
+        );
+      },
+      version: 1,
+    );
+  }
+
+  Future<void> _insertSong(SongData song) async {
+    final Database db = _database;
+
+    await db.insert(
+      'musicLib',
+      song.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<SongData>> _fetchSongs() async {
+    print("_setLibrary()\n");
+    // Get a reference to the database.
+    final Database db = _database;
+    print("db\n");
+    // Query the table.
+    final List<Map<String, dynamic>> maps = await db.query('musicLib');
+    print("Query Complete ${maps.length}\n");
+    // Convert the List<Map<String, dynamic> into a List<SongData>.
+    return List.generate(maps.length, (i) {
+      print("Adding song ${maps[i]['isAlarm']}\n");
+      return SongData(
+          album: maps[i]['album'],
+          albumArtwork: maps[i]['albumArtwork'],
+          albumId: maps[i]['albumId'],
+          artist: maps[i]['artist'],
+          artistId: maps[i]['artistId'],
+          bookmark: maps[i]['bookmark'],
+          composer: maps[i]['composer'],
+          duration: maps[i]['duration'],
+          filePath: maps[i]['filePath'],
+          fileSize: maps[i]['fileSize'],
+          isAlarm: (maps[i]['isAlarm'] == 'true'),
+          isMusic: (maps[i]['isMusic'] == "true"),
+          isNotification: (maps[i]['isNotification'] == "true"),
+          isPodcast: (maps[i]['isPodcast'] == "true"),
+          isRingtone: (maps[i]['isRingtone'] == "true"),
+          title: maps[i]['title'],
+          track: maps[i]['track'],
+          uri: maps[i]['uri'],
+          year: maps[i]['year']);
+    });
+  }
+
+  Future<void> _setLibrary() async {
+    print("_setLibrary()\n");
+    mp.library = await _fetchSongs();
+  }
+
+  Future<void> _checkDBSet() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _dbSet = (prefs.getInt('DBset') ?? 0);
+  }
+
+  Future<void> _setDB() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('DBset', 1);
+  }
+
+  void initiate() async {
+    await _fetchDB();
+
+    await _checkDBSet();
+
+    if (_dbSet == 0) {
+      print("DB not Set. Fetching SongLibrary");
+      //Fetch SongLibrary
+      audioQuery.getSongs().then((value) {
+        List<SongData> library = [];
+        for (var i = 0; i < value.length; ++i) {
+          library.add(SongData(
+              album: value[i].album,
+              albumArtwork: value[i].albumArtwork,
+              albumId: value[i].albumId,
+              artist: value[i].artist,
+              artistId: value[i].artistId,
+              bookmark: value[i].bookmark,
+              composer: value[i].composer,
+              duration: value[i].duration,
+              filePath: value[i].filePath,
+              fileSize: value[i].fileSize,
+              isAlarm: value[i].isAlarm,
+              isMusic: value[i].isMusic,
+              isNotification: value[i].isNotification,
+              isPodcast: value[i].isPodcast,
+              isRingtone: value[i].isRingtone,
+              title: value[i].title,
+              track: value[i].track,
+              uri: value[i].uri,
+              year: value[i].year));
+
+          print("Addding Song :$i");
+          _insertSong(library[i]);
+        }
+        mp.library = library;
+        _setDB();
+        setState(() {});
+      });
+    } else {
+      print("Fetching Library from DB");
+      await _setLibrary();
+      setState(() {});
+    }
+  }
+
   @override
+  void initState() {
+    super.initState();
+
+    mp = MusicPlayer();
+    WidgetsFlutterBinding.ensureInitialized();
+
+    initiate();
+  }
+
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
@@ -54,7 +194,7 @@ class _HomeState extends State<Home> {
                 flex: 7,
                 fit: FlexFit.tight,
                 child: Container(
-                  child: SongList(onSelect: (SongInfo song) async {
+                  child: SongList(onSelect: (SongData song) async {
                     setState(() {
                       mp.nowPlaying = song;
                       mp.player.play();
@@ -199,47 +339,37 @@ class _PlayPreviewState extends State<PlayPreview> {
 }
 
 class SongList extends StatelessWidget {
-  final void Function(SongInfo song) onSelect;
+  final void Function(SongData song) onSelect;
   SongList({@required this.onSelect});
-  Future<List<SongInfo>> fetchSongs() async {
-    return await audioQuery.getSongs();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-        child: FutureBuilder(
-            future: fetchSongs(),
-            builder: (context, snapshot) {
-              List<SongInfo> songList = snapshot.data;
-              if (snapshot.hasData)
-                return ListView.builder(
-                    itemCount: songList.length,
-                    itemBuilder: (context, index) {
-                      return SongTile(
-                        song: songList[index],
-                        onSelect: (SongInfo song) {
-                          mp.nowPlayingIndex = index;
-                          print(index);
-                          if (mp.playQueue == null) mp.playQueue = songList;
-                          onSelect(song);
-                        },
-                      );
-                    });
-              else
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                  ],
-                );
-            }));
+        child: (mp.library == null)
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                ],
+              )
+            : ListView.builder(
+                itemCount: mp.library.length,
+                itemBuilder: (context, index) {
+                  return SongTile(
+                      song: mp.library[index],
+                      onSelect: (SongData song) {
+                        mp.nowPlayingIndex = index;
+                        if (mp.playQueue == null) mp.playQueue = mp.library;
+                        print(index);
+                        onSelect(song);
+                      });
+                }));
   }
 }
 
 class SongTile extends StatelessWidget {
-  final SongInfo song;
-  final void Function(SongInfo song) onSelect;
+  final SongData song;
+  final void Function(SongData song) onSelect;
   SongTile({@required this.song, @required this.onSelect});
   @override
   Widget build(BuildContext context) {
